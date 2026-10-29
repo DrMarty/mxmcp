@@ -1,0 +1,46 @@
+MIT License
+
+Copyright (c) 2026 mxmcp contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+THIRD-PARTY NOTICES — read this before redistributing
+
+This project contains NO code, binaries or data files from STMicroelectronics.
+It is an independent client that can talk to a locally installed copy of
+STM32CubeMX (via its documented command line) or run entirely on a data pack
+that *you* generate from your own licensed installation (see docs/STANDALONE.md).
+
+Consequences for redistribution:
+
+1. `mxmcp/` sources (server, engine adapter, standalone engine, code generator,
+   MCP protocol) are covered by the MIT license above.
+2. The generated data pack (`mxmcp/data/cubemx-db.zip`) and everything under
+   `analysis/` and `docs/javap/` are DERIVED FROM STMicroelectronics content
+   (MCU database, IP mode/config XML, templates, class metadata). They are build
+   artifacts for local interoperability and MUST NOT be committed to a public
+   repository nor redistributed. `.gitignore` enforces this; CI fails if such a
+   file is ever added.
+3. STM32CubeMX itself, the STM32Cube firmware packages, CMSIS-Pack contents and
+   the ST trademark remain the property of STMicroelectronics and are governed by
+   their own licenses (see the `LICENSE*`/`SLA*` files inside the installation).
+4. Reverse engineering here is for interoperability, documentation and testing of
+   your own installations. You are responsible for complying with the license
+   terms of the software you have installed.

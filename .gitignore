@@ -1,0 +1,51 @@
+# --- build artifacts derived from STMicroelectronics content ---------------
+# These are produced locally by `python -m mxmcp.bundle build` and by the
+# reverse-engineering scripts. They MUST NOT be published: see LICENSE
+# "THIRD-PARTY NOTICES".
+mxmcp/data/cubemx-db.zip
+mxmcp/data/cubemx-db.zip.tmp
+mxmcp/data/config_model.json
+mxmcp/data/config_slim.json
+mxmcp/data/ip_modes.json
+mxmcp/data/middleware.json
+mxmcp/data/rtos_model.json
+analysis/
+docs/javap/
+docs/rtos_apis.xml
+docs/cli_usage_tables.txt
+docs/cli_commands.tsv
+docs/cli_help/
+docs/cli_help.json
+# verbatim javap / decompiled dumps of ST classes
+docs/*.javap.txt
+docs/ThirdPartyCli.full.txt
+_extract/
+cls/
+probe/
+build/
+
+# --- python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# --- editor / OS ------------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
+
+# --- local project state ----------------------------------------------------
+*.ioc.bak
+.mxmcp/
+
+mxmcp/data/cli_registry.json
+
+mxmcp/data/condition_language.json

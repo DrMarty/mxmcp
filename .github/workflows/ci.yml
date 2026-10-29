@@ -1,0 +1,73 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: py${{ matrix.python }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.9", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Lint
+        run: ruff check .
+      - name: Protocol self-test
+        run: python -m mxmcp.server --selftest
+      - name: Tool surface
+        run: python -m mxmcp.server --list-tools
+      - name: Unit tests (no CubeMX needed)
+        run: pytest tests -q
+
+  compliance:
+    name: no ST-derived artifacts in the tree
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Check redistribution policy
+        run: python tools/check_compliance.py
+
+  package:
+    name: build wheel + sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install --upgrade build
+      - run: python -m build
+      - name: Wheel must not contain ST data
+        run: |
+          python - <<'PY'
+          import glob, sys, zipfile
+          bad = []
+          for whl in glob.glob("dist/*.whl"):
+              with zipfile.ZipFile(whl) as z:
+                  for n in z.namelist():
+                      if n.endswith((".zip", ".i64", ".idb")) or "analysis/" in n:
+                          bad.append(n)
+          print("checked", len(glob.glob("dist/*.whl")), "wheels")
+          sys.exit(1 if bad else 0)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*

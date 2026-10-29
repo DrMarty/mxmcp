@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mxmcp"
+version = "1.1.0"
+description = "MCP server for STM32CubeMX — full project control, and a standalone mode that needs no CubeMX installation"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "mxmcp contributors" }]
+keywords = ["stm32", "stm32cubemx", "mcp", "model-context-protocol", "embedded",
+            "code-generation", "reverse-engineering", "ioc"]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Code Generators",
+  "Topic :: Software Development :: Embedded Systems",
+  "Topic :: System :: Hardware",
+]
+dependencies = []          # standard library only, on purpose
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "ruff>=0.5"]
+
+[project.scripts]
+mxmcp = "mxmcp.server:main"
+mxmcp-bundle = "mxmcp.bundle:main"
+
+[project.urls]
+Homepage = "https://github.com/example/mxmcp"
+Documentation = "https://github.com/example/mxmcp/tree/main/docs"
+Issues = "https://github.com/example/mxmcp/issues"
+
+[tool.setuptools]
+packages = ["mxmcp"]
+
+[tool.setuptools.package-data]
+# NOTE: mxmcp/data/*.zip is the locally generated data pack and is intentionally
+# NOT listed here — it is derived from STMicroelectronics content and must not be
+# redistributed. Run `python -m mxmcp.bundle build` after installing.
+mxmcp = ["data/*.json"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501", "E741"]   # E741: `l` as a line variable
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
