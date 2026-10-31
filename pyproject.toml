@@ -40,11 +40,15 @@ Issues = "https://github.com/example/mxmcp/issues"
 [tool.setuptools]
 packages = ["mxmcp"]
 
+# The repository and its distributions ship CODE ONLY. Everything under
+# mxmcp/data/ is derived from STMicroelectronics content (MCU database, IP
+# mode/config XML, templates) and is generated locally by
+# `python -m mxmcp.bundle build`. It must never be packaged.
 [tool.setuptools.package-data]
-# NOTE: mxmcp/data/*.zip is the locally generated data pack and is intentionally
-# NOT listed here — it is derived from STMicroelectronics content and must not be
-# redistributed. Run `python -m mxmcp.bundle build` after installing.
-mxmcp = ["data/*.json"]
+mxmcp = []
+
+[tool.setuptools.exclude-package-data]
+mxmcp = ["data", "data/*", "data/**/*"]
 
 [tool.ruff]
 line-length = 88
