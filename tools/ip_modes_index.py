@@ -14,10 +14,9 @@ whether `set mode` will register a `Mcu.IPn` entry.
 from __future__ import annotations
 
 import json
-import re
 import sys
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 ROOT = Path(r"C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX\db\mcu\IP")
 HERE = Path(__file__).resolve().parent.parent

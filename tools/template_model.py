@@ -18,7 +18,7 @@ from __future__ import annotations
 import json
 import re
 import sys
-from collections import Counter, defaultdict
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(r"C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX\db")

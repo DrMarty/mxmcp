@@ -1,14 +1,12 @@
 """Smoke test for the standalone engine (no CubeMX, no JVM)."""
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from mxmcp.bundle import Pack
 from mxmcp.ipmodes import IPModes
-from mxmcp.standalone import DeviceDB, StandaloneProject, StandaloneError
+from mxmcp.standalone import DeviceDB, StandaloneError, StandaloneProject
 
 out = Path("build/standalone")
 out.mkdir(parents=True, exist_ok=True)

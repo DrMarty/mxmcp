@@ -9,7 +9,6 @@ from __future__ import annotations
 import pathlib
 import shutil
 import sys
-import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 from mxmcp.engine import Session  # noqa: E402

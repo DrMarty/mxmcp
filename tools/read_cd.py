@@ -11,7 +11,6 @@ from __future__ import annotations
 import json
 import struct
 import sys
-import zipfile
 from pathlib import Path
 
 EXE = Path(r"C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX\STM32CubeMX.exe")

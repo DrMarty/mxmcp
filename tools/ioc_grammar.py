@@ -1,4 +1,4 @@
-"""Full .ioc grammar from a corpus of real project files.
+r"""Full .ioc grammar from a corpus of real project files.
 
 Sources: the 430 board .ioc shipped by the board manager, user projects found
 under Documents, and projects generated during reverse engineering.

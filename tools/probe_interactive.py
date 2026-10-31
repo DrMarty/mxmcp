@@ -8,7 +8,6 @@ Also verifies the documented `-q <script>` + stdin hybrid is NOT needed.
 """
 from __future__ import annotations
 
-import os
 import queue
 import subprocess
 import sys

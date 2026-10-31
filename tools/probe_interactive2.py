@@ -6,8 +6,6 @@ know precisely where a response ends so the MCP engine can reliably frame it.
 """
 from __future__ import annotations
 
-import os
-import queue
 import subprocess
 import sys
 import threading

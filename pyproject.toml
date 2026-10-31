@@ -58,6 +58,12 @@ target-version = "py39"
 select = ["E", "F", "W", "I", "UP", "B"]
 ignore = ["E501", "E741"]   # E741: `l` as a line variable
 
+[tool.ruff.lint.per-file-ignores]
+# `tools/` holds one-off forensic scripts (javap scans, archive carving, engine
+# probes). They are evidence-collection utilities, not part of the shipped
+# package, and deliberately trade polish for directness.
+"tools/*" = ["E402", "E731", "F841", "B007", "B023"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"

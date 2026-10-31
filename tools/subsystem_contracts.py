@@ -21,11 +21,10 @@ import bz2
 import json
 import re
 import sys
-import tarfile
+import xml.etree.ElementTree as ET
 import zipfile
 from collections import Counter, defaultdict
 from pathlib import Path
-import xml.etree.ElementTree as ET
 
 ROOT = Path(r"C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX")
 OUT = Path(__file__).resolve().parent.parent / "analysis" / "subsystem_contracts.json"

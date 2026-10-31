@@ -1,7 +1,6 @@
 """Verify RTOS enablement + object persistence through the store API."""
 from __future__ import annotations
 
-import json
 import pathlib
 import sys
 
@@ -10,6 +9,7 @@ from mxmcp.store import ProjectManager  # noqa: E402
 
 ws = pathlib.Path("build/rtosdbg").resolve()
 import shutil
+
 shutil.rmtree(ws, ignore_errors=True)
 ws.mkdir(parents=True)
 pm = ProjectManager(max_open=1)

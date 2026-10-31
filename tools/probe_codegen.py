@@ -3,9 +3,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from mxmcp.bundle import Pack
-from mxmcp.standalone import DeviceDB, StandaloneProject
 from mxmcp.codegen import Generator
+from mxmcp.standalone import DeviceDB, StandaloneProject
 
 out = Path("build/sacode")
 p = StandaloneProject.load(DeviceDB(), "build/standalone/sa1.ioc")

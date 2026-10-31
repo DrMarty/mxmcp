@@ -4,7 +4,6 @@ This is the exact command dialect the MCP server will drive. It exists as a
 standalone harness so the behaviour can be reproduced without the MCP layer.
 """
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path

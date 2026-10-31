@@ -15,22 +15,22 @@ from mxmcp.engine import Session  # noqa: E402
 MCU = "STM32F103C8Tx"
 IRQ = "USART1_IRQn"
 CANDIDATES = {
-    "NVIC": ["get_interrupts", f"get_ip_interrupts USART1", "get_prioritygroup",
+    "NVIC": ["get_interrupts", "get_ip_interrupts USART1", "get_prioritygroup",
              f"get_priority {IRQ}", f"get_subpriority {IRQ}",
              f"get_irqhandlergenerated {IRQ}", f"get_enable_state {IRQ}",
              f"get_group {IRQ}", f"get_preemptsource {IRQ}",
              f"get_startupdelay {IRQ}", "list", "list_all",
              f"enable {IRQ}", f"disable {IRQ}", f"set_priority {IRQ} 1",
-             f"set_prioritygroup 4"],
-    "dma": ["list_all", "used_flows", f"list USART1_TX",
-            f"listbriefly USART1_TX", "list_controller DMA1",
-            f"available_streams USART1_TX", f"is_available USART1_TX",
-            "get_param", f"get_param USART1_TX Priority",
-            f"get_param USART1_TX Priority DMA1_Channel1",
-            f"set_param USART1_TX Priority Medium",
-            f"set_param USART1_TX Priority Medium DMA1_Channel1",
-            f"set_flow USART1_TX Peripheral-To-Memory",
-            f"delete USART1_TX"],
+             "set_prioritygroup 4"],
+    "dma": ["list_all", "used_flows", "list USART1_TX",
+            "listbriefly USART1_TX", "list_controller DMA1",
+            "available_streams USART1_TX", "is_available USART1_TX",
+            "get_param", "get_param USART1_TX Priority",
+            "get_param USART1_TX Priority DMA1_Channel1",
+            "set_param USART1_TX Priority Medium",
+            "set_param USART1_TX Priority Medium DMA1_Channel1",
+            "set_flow USART1_TX Peripheral-To-Memory",
+            "delete USART1_TX"],
 }
 
 

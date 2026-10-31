@@ -1,9 +1,5 @@
-import json
 import os
-import shutil
 import subprocess
-import sys
-import time
 
 JAVA = r"C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX\jre\bin\java.exe"
 EXE = r"C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX\STM32CubeMX.exe"

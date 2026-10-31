@@ -11,7 +11,6 @@ Output: analysis/cli_registry.json (+ human readable docs/CLI_REGISTRY.md).
 from __future__ import annotations
 
 import json
-import os
 import re
 import subprocess
 import sys

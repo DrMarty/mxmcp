@@ -11,8 +11,8 @@ import json
 import re
 import struct
 import sys
-import zlib
 import zipfile
+import zlib
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent.parent

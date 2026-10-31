@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import os
 import sys
-from pathlib import Path
 
 ROOTS = [
     r"C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX\db",

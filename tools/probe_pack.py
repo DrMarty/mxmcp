@@ -1,7 +1,6 @@
 """Probe the CMSIS-Pack component commands and inspect resulting .ioc."""
 from __future__ import annotations
 
-import json
 import pathlib
 import sys
 
