@@ -1,74 +1,74 @@
-# 验收记录（最终版）
+# Acceptance Record (final)
 
-环境：Windows 10 · Python 3.11 · STM32CubeMX **6.15.0 / DB.6.0.150** · 无第三方运行时依赖
-产物：`mxmcp` **113 个 MCP 工具**，双模式（hybrid 驱动官方引擎 / standalone 零安装）
+Environment: Windows 10 · Python 3.11 · STM32CubeMX **6.15.0 / DB.6.0.150** · no third-party runtime dependencies
+Deliverable: `mxmcp` **113 MCP tools**, dual mode (hybrid drives the official engine / standalone needs zero installation)
 
 ---
 
-## 1. 逆向证据台账
+## 1. Reverse-engineering evidence ledger
 
-| # | 结论 | 证据产物 | 数量 |
+| # | Finding | Evidence artifact | Count |
 |---|---|---|---|
-| 1 | 交付物是 PE32 装载器 + 内嵌 ZIP 的 Java 应用，无需脱壳 | `analysis/cd_entries.json`、`analysis/stub_version.json`、REA PE 结果 | 本地头起 `0x13000`，CD `0xD2F0A03` |
-| 2 | 内嵌归档**全量** 54 774 条目可重建（0 失败） | `tools/rebuild_full_jar.py` → `_extract/cubemx_full.jar` | 227 113 372 B |
-| 3 | `com/st/components/**` 在归档内（含 `CommandLineManager`） | `docs/javap/`、`analysis/api_index.json` | 196 条目 |
-| 4 | 类/方法/字段全量表 | `analysis/api_index.json` | **3 222 类 / 41 841 方法 / 38 255 字段 / 339 包** |
-| 5 | CLI 注册表 | `analysis/cli_registry.json`、`docs/CLI_REGISTRY.md` | **267 条 / 64 命令头 / 14 jar** |
-| 6 | 运行时用法表（含只读命令回显） | `analysis/cli_usage_tables.txt`、`docs/cli_usage_tables.txt` | 34 个命令族 |
-| 7 | 插件 RPC 协议 | `analysis/plugin_protocol.json` | **217 opcode + 30 返回码 + 99 常量** |
-| 8 | 数据模型（6 690 个 XML） | `analysis/db_schema.json`、`analysis/db_census.json` | 171 目录 / 2 019 MCU / 1 321 IP Modes / 1 308 Configs |
-| 9 | 条件表达式语言 | `analysis/condition_language.json` | **636 975** 条表达式 |
-| 10 | `.ioc` 语法 | `analysis/ioc_grammar.json` | 506 份语料 → **7 670** 键模式 |
-| 11 | 代码生成模型 | `analysis/template_model.json`、`analysis/config_model.json` | **1 756** 模板 / **2 706** 模型键 / 192 IP 参数树 |
-| 12 | IDE 生成后端 | `analysis/cubeide_services.json` | 20 p2 插件 / 28 服务 / mxScratch schema |
-| 13 | RTOS 对象模型与存储 | `analysis/rtos_model.json`、`docs/rtos_apis.xml` | v1 7 类 / v2 8 类 / 75 字段 |
-| 14 | 中间件名录 | `analysis/middleware_constants.json` | **239 常量 / 36 实例名** |
-| 15 | 信任链与端点 | `analysis/strings_report.json`、`docs/SECURITY_NETWORK.md` | 5 证书 / 1560 URL / 460 主机 |
-| 16 | 安装树全貌 | `analysis/install_census.json`、`analysis/peripherals_of_install.json` | 11 378 文件 / 1 520 MB / 709 目录 |
-| 17 | 其余子系统 | `analysis/subsystem_contracts.json`、`analysis/plugin_resources.json` | power 225 / clock 64 / RIF 70 / PackCreator 4 823 类 |
-| 18 | 选型产品库 | `analysis/mcufinder_data_layer.json` | 19 表 / 17 491 CPN / 644 828 属性行 |
+| 1 | The deliverable is a Java application packaged as a PE32 loader + embedded ZIP; no unpacking needed | `analysis/cd_entries.json`, `analysis/stub_version.json`, REA PE results | local headers start at `0x13000`, CD at `0xD2F0A03` |
+| 2 | **All** 54 774 entries of the embedded archive can be rebuilt (0 failures) | `tools/rebuild_full_jar.py` → `_extract/cubemx_full.jar` | 227 113 372 B |
+| 3 | `com/st/components/**` is inside the archive (including `CommandLineManager`) | `docs/javap/`, `analysis/api_index.json` | 196 entries |
+| 4 | Full table of classes/methods/fields | `analysis/api_index.json` | **3 222 classes / 41 841 methods / 38 255 fields / 339 packages** |
+| 5 | CLI registry | `analysis/cli_registry.json`, `docs/CLI_REGISTRY.md` | **267 entries / 64 command heads / 14 jars** |
+| 6 | Runtime usage tables (including echo of read-only commands) | `analysis/cli_usage_tables.txt`, `docs/cli_usage_tables.txt` | 34 command families |
+| 7 | Plugin RPC protocol | `analysis/plugin_protocol.json` | **217 opcodes + 30 return codes + 99 constants** |
+| 8 | Data model (6 690 XML files) | `analysis/db_schema.json`, `analysis/db_census.json` | 171 directories / 2 019 MCUs / 1 321 IP Modes / 1 308 Configs |
+| 9 | Condition expression language | `analysis/condition_language.json` | **636 975** expressions |
+| 10 | `.ioc` grammar | `analysis/ioc_grammar.json` | 506 corpus files → **7 670** key patterns |
+| 11 | Code generation model | `analysis/template_model.json`, `analysis/config_model.json` | **1 756** templates / **2 706** model keys / 192 IP parameter trees |
+| 12 | IDE generation backend | `analysis/cubeide_services.json` | 20 p2 plugins / 28 services / mxScratch schema |
+| 13 | RTOS object model and storage | `analysis/rtos_model.json`, `docs/rtos_apis.xml` | v1 7 classes / v2 8 classes / 75 fields |
+| 14 | Middleware directory | `analysis/middleware_constants.json` | **239 constants / 36 instance names** |
+| 15 | Trust chain and endpoints | `analysis/strings_report.json`, `docs/SECURITY_NETWORK.md` | 5 certificates / 1560 URLs / 460 hosts |
+| 16 | Full installation tree | `analysis/install_census.json`, `analysis/peripherals_of_install.json` | 11 378 files / 1 520 MB / 709 directories |
+| 17 | Remaining subsystems | `analysis/subsystem_contracts.json`, `analysis/plugin_resources.json` | power 225 / clock 64 / RIF 70 / PackCreator 4 823 classes |
+| 18 | Product selection database | `analysis/mcufinder_data_layer.json` | 19 tables / 17 491 CPNs / 644 828 attribute rows |
 
-## 2. 工具面
+## 2. Tool surface
 
 ```
 python -m mxmcp.server --list-tools   ->  113 tools
 python -m mxmcp.server --selftest     ->  {"name":"mxmcp","version":"1.1.0"} / tools: 113
 ```
 
-| 族 | 数量 | 关键工具 |
+| Family | Count | Key tools |
 |---|---|---|
-| 工程 | 18 | `project_create/generate/save/diff/report/export_script` |
-| 选型（离线） | 15 | `mcu_search/mcu_info/mcu_pin_functions/board_*/mode_catalog/product_db/command_catalog` |
-| 引脚外设 | 22 | `pin_set/pin_functions/gpio_*/mode_*/ip_param_*/value_check/submode_state` |
-| 中断·DMA·内存 | 10 | `nvic_read/write/dma_*/mdma_*/gic_*/mmt/lpbam` |
-| RTOS·中间件 | 7 | `rtos_schema/status/objects/object_write/config/middleware_list/add` |
-| 时钟 | 4 | `clock_get/set/resolve/param_possible_values` |
-| 生成·校验 | 4 | `project_generate/generate_code/verify/compliance` |
-| 移植·比较 | 3 | `porting/ioc_compare/selectors` |
-| 软件包 | 8 | `pack_*/swmgr/xcubedl/login/logout` |
-| **独立模式** | **12** | `standalone_info/create/open/pin/signals/mode/param/nvic/view/validate/generate/mcu` |
-| `.ioc`·兜底 | 10 | `ioc_*/cli/cli_batch/cli_help/runtime_props/ide_bridge` |
+| Project | 18 | `project_create/generate/save/diff/report/export_script` |
+| Selection (offline) | 15 | `mcu_search/mcu_info/mcu_pin_functions/board_*/mode_catalog/product_db/command_catalog` |
+| Pins & peripherals | 22 | `pin_set/pin_functions/gpio_*/mode_*/ip_param_*/value_check/submode_state` |
+| Interrupts · DMA · memory | 10 | `nvic_read/write/dma_*/mdma_*/gic_*/mmt/lpbam` |
+| RTOS · middleware | 7 | `rtos_schema/status/objects/object_write/config/middleware_list/add` |
+| Clock | 4 | `clock_get/set/resolve/param_possible_values` |
+| Generation · validation | 4 | `project_generate/generate_code/verify/compliance` |
+| Porting · comparison | 3 | `porting/ioc_compare/selectors` |
+| Software packs | 8 | `pack_*/swmgr/xcubedl/login/logout` |
+| **Standalone mode** | **12** | `standalone_info/create/open/pin/signals/mode/param/nvic/view/validate/generate/mcu` |
+| `.ioc` · fallback | 10 | `ioc_*/cli/cli_batch/cli_help/runtime_props/ide_bridge` |
 
-## 3. 测试结果
+## 3. Test results
 
-| 脚本 | 需要 CubeMX | 结果 |
+| Script | Needs CubeMX | Result |
 |---|---|---|
-| `pytest tests/test_smoke.py` | 否 | **12 passed**（协议、`.ioc`、数据包、独立引擎、代码生成、IP 模式、合规声明） |
-| `tests/test_standalone.py` | **否** | **通过**：无安装下 建工程→引脚校验→模式→参数→NVIC→生成 6 文件，非法信号被拒，引擎工具立即报错 |
-| `tests/test_units.py` | 是 | 通过（含 913 文件真实生成） |
-| `tests/test_e2e.py` | 是 | 通过（F1 全流程 / 板卡 / F4 时钟 / CLI 桥） |
-| `tests/test_advanced.py` | 是 | **ALL OK**（dma/nvic/gic/mmt/porting/selectors/catalog 全绿） |
-| `tests/test_rtos.py` | 是 | 通过（任务/队列/信号量增删改 + 重复名拒绝 + config） |
-| `tests/test_middleware.py` | 是 | 通过（FREERTOS 集成 → active IP 报告 → verify） |
+| `pytest tests/test_smoke.py` | No | **12 passed** (protocol, `.ioc`, data pack, standalone engine, code generation, IP modes, compliance statement) |
+| `tests/test_standalone.py` | **No** | **Passed**: without an installation, create project → pin validation → mode → parameters → NVIC → generate 6 files; invalid signal rejected, engine tools fail immediately |
+| `tests/test_units.py` | Yes | Passed (including real generation of 913 files) |
+| `tests/test_e2e.py` | Yes | Passed (F1 full flow / boards / F4 clock / CLI bridge) |
+| `tests/test_advanced.py` | Yes | **ALL OK** (dma/nvic/gic/mmt/porting/selectors/catalog all green) |
+| `tests/test_rtos.py` | Yes | Passed (task/queue/semaphore create/delete/update + duplicate-name rejection + config) |
+| `tests/test_middleware.py` | Yes | Passed (FREERTOS integration → active IP report → verify) |
 
-静态检查：
+Static checks:
 
 ```
 ruff check mxmcp tests        ->  All checks passed!
 python -m mxmcp.bundle verify ->  2028/2028 members ok, mcus: 2019
 ```
 
-## 4. 独立模式实测（`MXMCP_CUBEMX_ROOT` 指向不存在的目录）
+## 4. Standalone mode test run (`MXMCP_CUBEMX_ROOT` pointing to a nonexistent directory)
 
 ```
 tools: 113
@@ -83,41 +83,41 @@ invalid pin signal rejected: True
 mode/param/nvic: OK
 validate ok: True []
 generate: 6 files standalone
-main.c 含 BaudRate = 115200: True
+main.c contains BaudRate = 115200: True
 engine tool without install -> clean error: True
 ```
 
-## 5. 关键行为（均已固化为代码路径）
+## 5. Key behaviors (all hardened into code paths)
 
-1. `load` 只认 db RefName；料号先解析（否则解释器永久挂起）。
-2. 参数必须登记进 `<IP>.IPParameters` 才落盘。
-3. `config save` 无路径会挂起 → 只用 `saveas`/`saveext`。
-4. 应答三种成帧：独立终止符行 / 终止符粘行（`…0 OK`）/ log4j 行（dma、nvic、
-   `get mode_param_pattern`）——`engine.py` 全部处理。
-5. 引擎超时即杀进程，下次调用自动 `config load` 恢复；结果里 `hung: true`。
-6. 固件包版本不一致会触发联网下载（无 UI 会挂起）→ 生成前预检 + 自动固定版本。
-7. RTOS 表只在 `project_ext.ioc` 出现 → 读取时合并视图，写入后经引擎 reload 规范化。
-8. 中间件 IP 需要不带引号的 `set mode`，且 `get modes` 返回 KO → 回退到 db 模式表。
-9. 无安装时引擎工具**立即**返回可操作错误，并指引 `standalone_*`。
+1. `load` only accepts a db RefName; part numbers are resolved first (otherwise the interpreter hangs forever).
+2. Parameters are only written to disk once registered in `<IP>.IPParameters`.
+3. `config save` without a path hangs → only `saveas`/`saveext` are used.
+4. Three response framings: standalone terminator line / terminator glued to a line (`…0 OK`) / log4j lines (dma, nvic,
+   `get mode_param_pattern`) — `engine.py` handles all of them.
+5. On engine timeout the process is killed, and the next call automatically restores state via `config load`; the result contains `hung: true`.
+6. A firmware package version mismatch triggers an online download (which hangs without a UI) → pre-check before generation + automatic version pinning.
+7. RTOS tables only appear in `project_ext.ioc` → merged view on read; normalized via engine reload after write.
+8. Middleware IPs need an unquoted `set mode`, and `get modes` returns KO → fall back to the db mode table.
+9. Without an installation, engine tools return an actionable error **immediately** and point to `standalone_*`.
 
-## 6. 已知边界（不假装做到的事）
+## 6. Known limits (things we don't pretend to do)
 
-| 项 | 原因 | 现状 |
+| Item | Reason | Status |
 |---|---|---|
-| 时钟树求解 | `clock.jar` 专有算法 | 仅 hybrid；standalone 原样保留 `RCC.*` 参数 |
-| ST 原版代码 | 1 756 个 FreeMarker + 产品逻辑 | standalone 生成可编译骨架（`fidelity: standalone`） |
-| GUI 选择器/向导 | 命令仅在对话框实例化后注册 | 用离线 catalog 覆盖同一数据 |
-| 功耗/LPBAM/DDR 计算 | 插件内算法 | 数据已提取，算法未重写 |
-| React 客户端模块图 | 单文件 bundle 超 REA worker 堆 | 已取桥接口与端点；记录为未展开 |
-| `pack enable` | 需 `TP_ADVANCED_MODE` + 已下载的第三方包 | 保留为显式工具，报错忠实返回 |
+| Clock tree solving | Proprietary algorithm in `clock.jar` | hybrid only; standalone keeps `RCC.*` parameters as-is |
+| ST's original code | 1 756 FreeMarker templates + product logic | standalone generates a compilable skeleton (`fidelity: standalone`) |
+| GUI selectors/wizards | Commands are only registered after the dialog is instantiated | Covered by offline catalogs with the same data |
+| Power/LPBAM/DDR calculations | Algorithms inside plugins | Data extracted, algorithms not reimplemented |
+| React client module graph | Single-file bundle exceeds the REA worker heap | Bridge interface and endpoints extracted; recorded as not expanded |
+| `pack enable` | Requires `TP_ADVANCED_MODE` + a downloaded third-party pack | Kept as an explicit tool; errors are returned faithfully |
 
-## 7. 复现
+## 7. Reproduction
 
 ```bat
 python -m mxmcp.bundle build && python -m mxmcp.bundle verify
 python -m mxmcp.server --selftest
 python -m pytest tests\test_smoke.py -q
-python tests\test_standalone.py            :: 无安装验证
-python tests\test_e2e.py                   :: 需 CubeMX
-python tools\check_compliance.py           :: 提交前合规检查
+python tests\test_standalone.py            :: no-installation verification
+python tests\test_e2e.py                   :: requires CubeMX
+python tools\check_compliance.py           :: pre-commit compliance check
 ```

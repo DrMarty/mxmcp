@@ -1,14 +1,14 @@
-# CubeMX 数据模型（由安装件与运行时提取生成）
+# CubeMX Data Model (generated from installation artifacts and runtime extraction)
 
-本文全部由 `tools/*.py` 对安装件与运行中的引擎取证生成，原始记录在 `analysis/*.json`。任何写回的字段都必须能在本文找到出处。
+This document is generated entirely by `tools/*.py` from forensic analysis of the installation and the running engine; the raw records are in `analysis/*.json`. Every field that is written back must be traceable to a source in this document.
 
-## 1. 资产规模
-| 文件 | 体积 | 目录 | XML | FTL | IOC | LD | DTS(I) | 类 |
+## 1. Asset Inventory
+| Files | Size | Directories | XML | FTL | IOC | LD | DTS(I) | Classes |
 |---|---|---|---|---|---|---|---|---|
 | 11378 | 1520 MB | 709 | 6775 | 1756 | 504 | 277 | 134 | 3222 |
 
-## 2. XML 族谱（每族根元素与元素/属性计数）
-| 目录族 | 文件数 | 根元素 | 高频子元素 |
+## 2. XML Families (root elements and element/attribute counts per family)
+| Directory family | Files | Root elements | Frequent child elements |
 |---|---|---|---|
 | mcu | 2019 | rules×2, Families×1, Mcu×37 | Peripheral×59606, Signal×10496, Core×2941, Flash×2720, Mcu×2711, Ram×2711, IONb×2711, Frequency×2026 |
 | mcu_ip_modes | 1321 | IP×30 | PossibleValue×23362, RefParameter×7994, Condition×5061, Parameter×3882, Description×2642, Semaphore×1861, Mode×1793, RefMode×1322 |
@@ -27,8 +27,8 @@
 | templates_dirs | 656 | - |  |
 | all_xml_files | 6690 | ctx_periph_help×178, ctx_core_help×1, ctx_pinout_help×184, ctx_serie_help×1 | Signal×1377957, Argument×618180, PossibleValue×445203, Parameter×277028, RefParameter×262101, ContextIP×252757, Pin×245083, Condition×232596 |
 
-## 3. MCU 记录字段（`db/mcu/*.xml`）
-| 元素 | 属性（出现次数） |
+## 3. MCU Record Fields (`db/mcu/*.xml`)
+| Element | Attributes (occurrences) |
 |---|---|
 | rule | name×317, cache×117 |
 | Families | {http://www.w3.org/2001/XMLSchema-instance}noNamespaceSchemaLocation×1 |
@@ -44,8 +44,8 @@
 | Signal | Name×10496, IOModes×1242 |
 | Condition | Diagnostic×27, Expression×27 |
 
-## 4. IP 模式文件（`db/mcu/IP/*_Modes.xml`）
-| 元素 | 样本内出现次数 |
+## 4. IP Mode Files (`db/mcu/IP/*_Modes.xml`)
+| Element | Occurrences in sample |
 |---|---|
 | PossibleValue | 23362 |
 | RefParameter | 7994 |
@@ -63,22 +63,22 @@
 | IP | 30 |
 | About | 29 |
 
-`RefParameter@Type` 的实测取值集合（含厂商手写拼写变体，均为事实）：
+Observed value set of `RefParameter@Type` (including the vendor's hand-written spelling variants, all recorded as found):
 ```
 list×132600, string×52947, integer×36605, double×6215, stringRW×5536, boolean×4746, hex×4283, String×4035, List×2407, uniqueElementList×1824, ×1799, UniqueElementList×1725, integerReadOnly×1458, StringRW×1375, Array×1247, Integer×740, decimal×531, subtitle×440, RWstring×434, Hex×319, StringHex×122, Int×94, doubleReadOnly×60, int×45, polynomialodd×30, bool×16
 ```
-`PossibleValue@Action`：Disable×51083, Remove×3705, DISABLE×2036, ENABLE×1251, remove×1165, disable×339, FLASH_BB_PRIV×40, FLASH_BB_SEC×40, 0×34, EXTMEM_LINK_CONFIG_1LINE×24
+`PossibleValue@Action`: Disable×51083, Remove×3705, DISABLE×2036, ENABLE×1251, remove×1165, disable×339, FLASH_BB_PRIV×40, FLASH_BB_SEC×40, 0×34, EXTMEM_LINK_CONFIG_1LINE×24
 
-## 5. 条件表达式语言
-- 样本内 `Condition@Expression` 总数：**636,975**（2629 个文件，解析失败 0）
-- 运算符/字面量：`(`, `)`, `|`, `=`, `&`, `!`, `$IpNumber`, `>`, `<`, `true`, `$IpInstance`, `:`
-- 内置引用：`$IpInstance`, `$IpNumber`, `$IpInstanceCH0`, `$IpInstanceCH1`, `$IpInstanceCH2`, `$IpInstanceCH3`, `$IpInstanceCH7`, `$IpInstanceCH6`
-- 函数：`MOD`, `IF`
-- 语义：`&` 与、`|` 或、`!` 非、`=` 相等、`>`/`<` 比较；`$IpInstance`/`$IpNumber` 展开为当前实例；`Semaphore_*$IpInstance` 为资源信号量；`DIE###` 为 die 变体布尔；`OB_*` 为选定位。
+## 5. Condition Expression Language
+- Total `Condition@Expression` count in sample: **636,975** (2629 files, 0 parse failures)
+- Operators/literals: `(`, `)`, `|`, `=`, `&`, `!`, `$IpNumber`, `>`, `<`, `true`, `$IpInstance`, `:`
+- Built-in references: `$IpInstance`, `$IpNumber`, `$IpInstanceCH0`, `$IpInstanceCH1`, `$IpInstanceCH2`, `$IpInstanceCH3`, `$IpInstanceCH7`, `$IpInstanceCH6`
+- Functions: `MOD`, `IF`
+- Semantics: `&` AND, `|` OR, `!` NOT, `=` equality, `>`/`<` comparison; `$IpInstance`/`$IpNumber` expand to the current instance; `Semaphore_*$IpInstance` is a resource semaphore; `DIE###` is a die-variant boolean; `OB_*` is an option-byte bit.
 
-## 6. `.ioc` 语法（语料统计）
-- 语料 **506** 份 `.ioc`，键模式 **7670** 种；覆盖家族：STM32C0, STM32F0, STM32F1, STM32F2, STM32F3, STM32F4, STM32F7, STM32G0, STM32G4, STM32H5, STM32H7, STM32L0, STM32L1, STM32L4 等 26 个。
-| 键模式 | 出现次数 | 值形态 |
+## 6. `.ioc` Grammar (corpus statistics)
+- Corpus: **506** `.ioc` files, **7670** key patterns; families covered: STM32C0, STM32F0, STM32F1, STM32F2, STM32F3, STM32F4, STM32F7, STM32G0, STM32G4, STM32H5, STM32H7, STM32L0, STM32L1, STM32L4 and others, 26 in total.
+| Key pattern | Occurrences | Value shapes |
 |---|---|---|
 | Mcu.PinN | 30896 | token, text |
 | PIN.Signal | 30289 | token, text |
@@ -98,16 +98,16 @@ list×132600, string×52947, integer×36605, double×6215, stringRW×5536, boole
 | SH.FMC_DN.0 | 672 | token, comma-list |
 | SH.FMC_DN.ConfNb | 672 | int |
 | File.Version | 506 | int |
-- 索引列表根：PIN.Signal, PIN.Locked, PIN.GPIOParameters, PIN.GPIO_Label, PIN.Mode, PIN.PinAttribute, PIN.GPIO_PuPd, PIN.GPIO_Speed, PIN.GPIO_Mode, PIN.GPIO_Speed_High_Default, PIN.GPIO_ModeDefaultOutputPP, PIN.GPIO_ModeDefaultEXTI
-- 值内 `:` 转义为 `\:`；`NVIC.<IRQ>` 与 `SH.*` 为转义高发键：NVIC.SysTick_IRQn, NVIC.HardFault_IRQn, NVIC.NonMaskableInt_IRQn, NVIC.PendSV_IRQn, NVIC.BusFault_IRQn, NVIC.DebugMonitor_IRQn
+- Indexed list roots: PIN.Signal, PIN.Locked, PIN.GPIOParameters, PIN.GPIO_Label, PIN.Mode, PIN.PinAttribute, PIN.GPIO_PuPd, PIN.GPIO_Speed, PIN.GPIO_Mode, PIN.GPIO_Speed_High_Default, PIN.GPIO_ModeDefaultOutputPP, PIN.GPIO_ModeDefaultEXTI
+- `:` inside values is escaped as `\:`; `NVIC.<IRQ>` and `SH.*` are the most frequently escaped keys: NVIC.SysTick_IRQn, NVIC.HardFault_IRQn, NVIC.NonMaskableInt_IRQn, NVIC.PendSV_IRQn, NVIC.BusFault_IRQn, NVIC.DebugMonitor_IRQn
 
-## 7. 代码生成模板
-- 模板 **1753** 个，模型键 **600** 个。
-- 高频模型键：`definition`, `fargument`, `SERVICE_SHORT_NAME_UpperCase`, `SvcNbr`, `argument`, `characteristic`, `used_api`, `FamilyName`, `method`, `instanceIndex`, `myHash`, `initVector`, `name`, `variable`, `mode`, `argValue`, `i`, `words`, `index2`, `instName`, `IpInstance`, `ipName`, `args`, `argument2`
-- include 图（节选）：
+## 7. Code Generation Templates
+- **1753** templates, **600** model keys.
+- Frequent model keys: `definition`, `fargument`, `SERVICE_SHORT_NAME_UpperCase`, `SvcNbr`, `argument`, `characteristic`, `used_api`, `FamilyName`, `method`, `instanceIndex`, `myHash`, `initVector`, `name`, `variable`, `mode`, `argValue`, `i`, `words`, `index2`, `instName`, `IpInstance`, `ipName`, `args`, `argument2`
+- include graph (excerpt):
 
-## 8. CubeIDE-MX 服务（工程/构建生成的真正后端）
-| p2 插件 | 消息条数 | 服务类（节选） |
+## 8. CubeIDE-MX Services (the actual backend for project/build generation)
+| p2 plugin | Messages | Service classes (excerpt) |
 |---|---|---|
 | com.st.stm32cube.ide.common.services.adapted | 18 | BuildSetupService, BuildUpdateService, DebugSetupService, DebugUpdateService, DeviceTreeSetupService, LinkSetupService, LinkUpdateService, ProjectRootModeSetupService |
 | com.st.stm32cube.ide.common.services.mx.rcp | 1 |  |
@@ -115,11 +115,11 @@ list×132600, string×52947, integer×36605, double×6215, stringRW×5536, boole
 | com.st.stm32cube.ide.common.services | 13 | BuildSetupService, BuildUpdateService, DebugSetupService, DebugUpdateService, LinkSetupService, LinkUpdateService, ProjectSetupService, VersionTestService |
 | com.st.stm32cube.ide.mcu.linker | 3 |  |
 | com.st.stm32cube.ide.mcu.productdb | 1 |  |
-- mxScratch schema：`mxScratch_v30.xsd`，根元素：startup, sourceEntry, sourceEntriesToRemove, sourceEntries, optimization, name, memory, memories, lib, inctoremove, include, icfloc …
+- mxScratch schema: `mxScratch_v30.xsd`, root elements: startup, sourceEntry, sourceEntriesToRemove, sourceEntries, optimization, name, memory, memories, lib, inctoremove, include, icfloc …
 
-## 9. 选型数据库（`~/.stmcufinder/plugins/mcu/cube-finder-db.db`）
-- cube-finder-db.db，86 MB，19 张表（只读取证）
-| 表 | 行数 | 列 |
+## 9. Product Selection Database (`~/.stmcufinder/plugins/mcu/cube-finder-db.db`)
+- cube-finder-db.db, 86 MB, 19 tables (read-only forensics)
+| Table | Rows | Columns |
 |---|---|---|
 | attribute | 232 | id:INTEGER, name:varchar(255), sourceName:varchar(255), type:varchar(45), unit:varchar(45) |
 | cpn | 17491 | id:INTEGER, cpn:varchar(45), refname:TEXT, prmis_id:INT |
@@ -140,5 +140,5 @@ list×132600, string×52947, integer×36605, double×6215, stringRW×5536, boole
 | sqlite_sequence | 7 | name:, seq: |
 | subcategory | 50 | id:INTEGER, itemKind:varchar(255), categoryRef:varchar(255), categoryName:varchar(255), su |
 | version | 1 | id:INTEGER, data_model_version:TEXT, configuration_version:TEXT, latest_data_refresh:DATET |
-- React↔Java 桥方法：getCustomPinsAsString, getOnlyCustomPinsAsString, getStandardPinsAsString
+- React↔Java bridge methods: getCustomPinsAsString, getOnlyCustomPinsAsString, getStandardPinsAsString
 

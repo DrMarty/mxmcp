@@ -1,63 +1,63 @@
-# mxmcp — STM32CubeMX 的 MCP 服务器（也可完全独立运行）
+# mxmcp — An MCP server for STM32CubeMX (can also run fully standalone)
 
-> 交付物：`mxmcp/`（服务器源码 + 自带数据包）、`tests/`（6 个测试脚本）、
-> `docs/`（逆向记录、架构、数据模型、功能矩阵、独立模式、验收）、
-> `analysis/`（机器可读逆向产物）、`tools/`（可复现的取证脚本）。
+> Deliverables: `mxmcp/` (server source + bundled data pack), `tests/` (6 test scripts),
+> `docs/` (reverse-engineering notes, architecture, data model, feature matrix, standalone mode, acceptance),
+> `analysis/` (machine-readable reverse-engineering artifacts), `tools/` (reproducible forensic scripts).
 
-两种模式，同一个 MCP 接口：
+Two modes, one MCP interface:
 
-* **hybrid**：装了 CubeMX 时驱动官方引擎（引脚/时钟/生成都是 ST 原版行为）。
-* **standalone**：**不需要任何 CubeMX 安装** —— 自带 9.1 MB 数据包
-  （2 019 颗 MCU / 245 083 引脚 / 274 套 IP 模式 / HAL Init 参数树），
-  自带校验引擎与 C 代码生成器。见 [docs/STANDALONE.md](docs/STANDALONE.md)。
+* **hybrid**: when CubeMX is installed, drives the official engine (pin/clock/generation behavior is genuine ST behavior).
+* **standalone**: **no CubeMX installation required** — ships with a 9.1 MB data pack
+  (2 019 MCUs / 245 083 pins / 274 IP mode sets / HAL Init parameter trees),
+  plus a built-in validation engine and C code generator. See [docs/STANDALONE.md](docs/STANDALONE.md).
 
 ```
-项目状态 (.ioc)  ←→  mxmcp (Python MCP server)  ←→  CubeMX CLI (常驻 JVM，可选)
+Project state (.ioc)  ←→  mxmcp (Python MCP server)  ←→  CubeMX CLI (resident JVM, optional)
                               ↑
-                   自带数据包 cubemx-db.zip（离线选型/校验/生成）
+                   Bundled data pack cubemx-db.zip (offline selection/validation/generation)
 ```
 
-## 1. 为什么这样做
+## 1. Why this approach
 
-* CubeMX 6.15.0 是 **PE32 装载器 + 内嵌 ZIP 的 Java 应用**（不是 native-image，
-  **不需要脱壳**）：`java -jar STM32CubeMX.exe -q script.txt` 就是官方 headless 入口；
-  内嵌归档 54 774 条目、起始 `0x13000`、中央目录 `0xD2F0A03`
-  （`tools/rebuild_full_jar.py` 全量重建，0 失败）。
-* 引擎内部有 **267 条** CLI 注册（旧记录只有 89 条，因为旧提取漏了
-  `com/st/components`）、217 个插件 opcode；`export script` 能把任意工程序列化成
-  可重放命令。
-* 因此 MCP 不做“重新实现 CubeMX”，而是**受控前端**：写操作走官方解释器，
-  读操作读 `.ioc`/自带数据包；两者可交叉校验（`verify` / `standalone_validate`）。
+* CubeMX 6.15.0 is a **Java application packaged as a PE32 loader + embedded ZIP** (not a native-image,
+  **no unpacking needed**): `java -jar STM32CubeMX.exe -q script.txt` is the official headless entry point;
+  the embedded archive has 54 774 entries, starting at `0x13000`, with the central directory at `0xD2F0A03`
+  (`tools/rebuild_full_jar.py` rebuilds it in full, 0 failures).
+* Internally the engine has **267** CLI registrations (older notes listed only 89, because the earlier extraction missed
+  `com/st/components`) and 217 plugin opcodes; `export script` can serialize any project into
+  replayable commands.
+* So the MCP server does not "reimplement CubeMX"; it is a **controlled front end**: write operations go through the official interpreter,
+  read operations read the `.ioc`/bundled data pack; the two can be cross-checked (`verify` / `standalone_validate`).
 
-完整逆向记录：[ARCHITECTURE.md](docs/ARCHITECTURE.md)（总览）·
-[REVERSE_ENGINEERING.md](docs/REVERSE_ENGINEERING.md)（过程）·
-[DATA_MODEL.md](docs/DATA_MODEL.md)（数据结构）·
-[CLI_REGISTRY.md](docs/CLI_REGISTRY.md)（267 条命令）·
-[FEATURES.md](docs/FEATURES.md)（功能覆盖矩阵）·
-[SECURITY_NETWORK.md](docs/SECURITY_NETWORK.md)（信任链与端点）·
-[STANDALONE.md](docs/STANDALONE.md)（独立模式）
+Full reverse-engineering notes: [ARCHITECTURE.md](docs/ARCHITECTURE.md) (overview) ·
+[REVERSE_ENGINEERING.md](docs/REVERSE_ENGINEERING.md) (process) ·
+[DATA_MODEL.md](docs/DATA_MODEL.md) (data structures) ·
+[CLI_REGISTRY.md](docs/CLI_REGISTRY.md) (267 commands) ·
+[FEATURES.md](docs/FEATURES.md) (feature coverage matrix) ·
+[SECURITY_NETWORK.md](docs/SECURITY_NETWORK.md) (trust chain and endpoints) ·
+[STANDALONE.md](docs/STANDALONE.md) (standalone mode)
 
-## 2. 运行要求
+## 2. Requirements
 
-* Python 3.9+（**零第三方依赖**，只用标准库）
-* STM32CubeMX **可选**：
-  * 装了 → hybrid 模式，用官方引擎（默认路径
-    `C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX`）
-  * 没装 → standalone 模式，先建一次数据包
-    `python -m mxmcp.bundle build --cubemx-root <安装目录>`（需要一台装了 CubeMX 的机器）
-* 注意：仓库**不附带**数据包（ST 派生内容，见 [LICENSE](LICENSE)）。
+* Python 3.9+ (**zero third-party dependencies**, standard library only)
+* STM32CubeMX is **optional**:
+  * Installed → hybrid mode, uses the official engine (default path
+    `C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX`)
+  * Not installed → standalone mode; build the data pack once first with
+    `python -m mxmcp.bundle build --cubemx-root <install dir>` (requires a machine with CubeMX installed)
+* Note: the repository **does not include** the data pack (ST-derived content, see [LICENSE](LICENSE)).
 
-环境变量（可选）：
+Environment variables (optional):
 
-| 变量 | 作用 | 默认 |
+| Variable | Purpose | Default |
 |---|---|---|
-| `MXMCP_CUBEMX_ROOT` | CubeMX 安装目录 | `C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX` |
-| `MXMCP_WORKSPACE` | 工程状态目录 | `~/.mxmcp` |
-| `MXMCP_MAX_ENGINES` | 同时驻留的 JVM 数（每个打开工程一个） | `3` |
+| `MXMCP_CUBEMX_ROOT` | CubeMX installation directory | `C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX` |
+| `MXMCP_WORKSPACE` | Project state directory | `~/.mxmcp` |
+| `MXMCP_MAX_ENGINES` | Number of concurrently resident JVMs (one per open project) | `3` |
 
-## 3. 接入 MCP 客户端
+## 3. Connecting an MCP client
 
-stdio 传输、JSON-RPC 2.0（换行分隔，也接受 `Content-Length` 帧）。
+stdio transport, JSON-RPC 2.0 (newline-delimited; `Content-Length` framing is also accepted).
 
 ```json
 {
@@ -72,7 +72,7 @@ stdio 传输、JSON-RPC 2.0（换行分隔，也接受 `Content-Length` 帧）�
 }
 ```
 
-自检：
+Self-check:
 
 ```bat
 python -m mxmcp.server --list-tools
@@ -80,12 +80,12 @@ python -m mxmcp.server --selftest
 python -m mxmcp.server --call catalog_index --args {}
 ```
 
-## 4. 五分钟上手
+## 4. Five-minute quick start
 
 ```text
 project_create {name: "blink", mcu: "STM32F103C8T6", toolchain: "Makefile"}
   -> project_id = blink
-mcu_pin_functions {project_id: "blink", pin: "PA9"}      # 看可选信号
+mcu_pin_functions {project_id: "blink", pin: "PA9"}      # see available signals
 pin_set   {project_id: "blink", pin: "PC13", signal: "GPIO_Output"}
 pin_set   {project_id: "blink", pin: "PA9",  signal: "USART1_TX"}
 pin_set   {project_id: "blink", pin: "PA10", signal: "USART1_RX"}
@@ -100,137 +100,136 @@ verify         {project_id: "blink"}
 project_generate {project_id: "blink", output_dir: "D:/work/blink", toolchain: "Makefile"}
 ```
 
-`project_generate` 返回文件清单与警告；典型结果：913 个文件、`Src/main.c`、`Drivers/`、
-`Makefile`、`.ioc`，耗时约 5–10 秒（引擎已热）。
+`project_generate` returns the file list and warnings; a typical result: 913 files, `Src/main.c`, `Drivers/`,
+`Makefile`, `.ioc`, taking about 5–10 seconds (with the engine warm).
 
-## 5. 工具一览（113 个）
+## 5. Tool overview (113)
 
-**工程生命周期**：`project_create` `project_list` `project_get` `project_open`
+**Project lifecycle**: `project_create` `project_list` `project_get` `project_open`
 `project_close` `project_save` `project_save_as` `project_delete` `project_diff`
 `project_load_mcu` `project_load_board` `project_import_config` `project_export_script`
 `project_options` `project_set_option` `project_report` `project_csv` `project_files`
 
-**选型/资料（离线）**：`catalog_index` `mcu_search` `mcu_info` `mcu_pin_functions`
+**Selection / reference data (offline)**: `catalog_index` `mcu_search` `mcu_info` `mcu_pin_functions`
 `family_list` `family_mcus` `board_search` `board_list` `ip_library` `template_list`
 `firmware_packages` `mode_catalog` `command_catalog` `product_db` `middleware_list`
 
-**引脚 / 外设**：`pinout_get` `pin_functions` `pin_set` `pin_reset` `pin_clear_all`
+**Pins / peripherals**: `pinout_get` `pin_functions` `pin_set` `pin_reset` `pin_clear_all`
 `pin_lock` `pin_reserve` `gpio_params` `gpio_set` `peripheral_list` `mode_list`
 `mode_set` `mode_reset` `mode_check` `sub_modes` `submode_state` `mode_pattern`
 `ip_param_get` `ip_param_set` `ip_params_set` `ip_params_dump` `ip_user_name`
 `value_check`
 
-**中断 / DMA / 内存映射**：`nvic_read` `nvic_write` `dma_query` `dma_mutate`
+**Interrupts / DMA / memory map**: `nvic_read` `nvic_write` `dma_query` `dma_mutate`
 `mdma_query` `mdma_mutate` `gic_query` `gic_mutate` `mmt` `lpbam`
 
-**RTOS / 中间件**：`rtos_schema` `rtos_status` `rtos_objects` `rtos_object_write`
+**RTOS / middleware**: `rtos_schema` `rtos_status` `rtos_objects` `rtos_object_write`
 `rtos_config` `middleware_add`
 
-**时钟**：`clock_get` `clock_set` `clock_resolve` `clock_param_possible_values`
+**Clock**: `clock_get` `clock_set` `clock_resolve` `clock_param_possible_values`
 
-**生成 / 校验**：`project_generate` `generate_code` `verify` `compliance`
+**Generation / validation**: `project_generate` `generate_code` `verify` `compliance`
 
-**移植 / 比较 / 选择器**：`porting` `ioc_compare` `selectors`
+**Porting / comparison / selectors**: `porting` `ioc_compare` `selectors`
 
-**软件包**：`pack_status` `pack_enable` `pack_disable` `pack_validate` `swmgr`
+**Software packs**: `pack_status` `pack_enable` `pack_disable` `pack_validate` `swmgr`
 `xcubedl` `login` `logout`
 
-**独立模式（无安装）**：`standalone_info` `standalone_create` `standalone_open`
+**Standalone mode (no installation)**: `standalone_info` `standalone_create` `standalone_open`
 `standalone_pin` `standalone_signals` `standalone_mode` `standalone_param`
 `standalone_nvic` `standalone_view` `standalone_validate` `standalone_generate`
 `standalone_mcu`
 
-**`.ioc` 直写 / 兜底 / 运行时**：`ioc_get` `ioc_set` `ioc_delete` `ioc_import`
+**Direct `.ioc` writes / fallback / runtime**: `ioc_get` `ioc_set` `ioc_delete` `ioc_import`
 `ioc_export` `cli` `cli_batch` `cli_help` `runtime_props` `ide_bridge`
 
-`cli` / `cli_batch` 能执行 [CLI_REGISTRY](docs/CLI_REGISTRY.md) 里的**任何**命令
-（267 条），所以 MCP 接口是 CubeMX CLI 的超集：即使某个能力没有专门工具，也不会丢。
-完整的功能→命令→工具对照见 [docs/FEATURES.md](docs/FEATURES.md)。
+`cli` / `cli_batch` can execute **any** command in [CLI_REGISTRY](docs/CLI_REGISTRY.md)
+(267 commands), so the MCP interface is a superset of the CubeMX CLI: even if a capability has no dedicated tool, nothing is lost.
+For the full feature → command → tool mapping, see [docs/FEATURES.md](docs/FEATURES.md).
 
-## 6. 关键行为与坑位（已在代码里处理）
+## 6. Key behaviors and pitfalls (already handled in code)
 
-1. **`load` 只认 db RefName**：`STM32F103C8T6` 会让解释器永久挂起；`project_create`
-   会先用本地库把料号解析成 `STM32F103C(8-B)Tx`。
-2. **参数不登记不落盘**：`ip_param_set`/`clock_set` 自动把参数名并入 `<IP>.IPParameters`。
-3. **`config save` 在无路径时挂起**：只用 `saveas`/`saveext`，并在保存后回读校验。
-4. **引擎卡死会污染后续调用**：会话引擎超时即杀进程，下次调用自动 `config load` 恢复；
-   返回值里 `hung: true` 会明确告知。
-5. **固件包版本必须匹配**：`.ioc` 里的 `FirmwarePackage` 与实际安装目录不一致时，
-   `project generate` 会尝试联网（无 UI 下可能挂起）。生成前会预检；缺包时自动
-   改用 `project setCustomFWPath` 指向已安装的同族包并重新固定版本，再生成。
-6. **首次生成可能只拷贝驱动**：CubeMX 偶尔第一遍只做驱动拷贝；工具会检测
-   “有 Drivers 无 main.c”并自动再生成一次。
-7. **GPIO 参数要完整引脚名**：`PC13` → `PC13-TAMPER-RTC`，工具会自动解析。
-8. **HSE 时钟树**：只设 `PLLSourceVirtual=HSE` 而不复用 OSC 引脚时时钟树仍按 HSI 求解；
-   `clock_set` 会自动把 `OSC_IN/OSC_OUT` 复用成 `RCC_OSC_IN/OUT`，并在结果里给出 warning。
-9. **派生时钟值要存两次**：CubeMX 在 *save* 时才计算 `PLLCLKFreq_Value` 等派生量。
-   可靠节奏是 **写入 → save → reload → save**（实测 8 MHz → 72 MHz），已固化在
-   `clock_set` 的多轮收敛里；手工用 `cli` 复现时务必照此顺序。
-10. **没有 `.ioc` 时别依赖已启动的引擎**：引擎被回收再启动是空工程，
-    `config saveas` 会抛 `Mcu.getDie()` NPE。先 `project_save` 一次再继续。
-11. **中间件 IP 的 `set mode` 不带引号**：`set mode FREERTOS CMSIS_V2`；`get modes`
-    对中间件返回 KO，`mode_list` 会自动回退到 `db/mcu/IP/*_Modes.xml`。
-12. **RTOS 对象只在扩展保存里**：`project_ext.ioc` 才有 `FREERTOS.Tasks01` 等；
-    读状态要合并视图，写完必须让引擎重新加载一次。
+1. **`load` only accepts the db RefName**: `STM32F103C8T6` makes the interpreter hang forever; `project_create`
+   first resolves the part number to `STM32F103C(8-B)Tx` using the local database.
+2. **Unregistered parameters are not persisted**: `ip_param_set`/`clock_set` automatically add the parameter name to `<IP>.IPParameters`.
+3. **`config save` hangs when no path is given**: only `saveas`/`saveext` are used, and the result is read back and verified after saving.
+4. **A hung engine contaminates subsequent calls**: the session engine's process is killed on timeout, and the next call automatically recovers via `config load`;
+   `hung: true` in the return value reports this explicitly.
+5. **Firmware package versions must match**: when `FirmwarePackage` in the `.ioc` does not match the actual install directory,
+   `project generate` tries to go online (which may hang without a UI). A pre-check runs before generation; if the package is missing, it automatically
+   uses `project setCustomFWPath` to point to an installed package of the same family, re-pins the version, and then generates.
+6. **The first generation may only copy drivers**: CubeMX occasionally only copies drivers on the first pass; the tool detects
+   "Drivers present but no main.c" and automatically generates again.
+7. **GPIO parameters need the full pin name**: `PC13` → `PC13-TAMPER-RTC`; the tool resolves this automatically.
+8. **HSE clock tree**: setting only `PLLSourceVirtual=HSE` without remapping the OSC pins still solves the clock tree using HSI;
+   `clock_set` automatically remaps `OSC_IN/OSC_OUT` to `RCC_OSC_IN/OUT` and includes a warning in the result.
+9. **Derived clock values need two saves**: CubeMX only computes derived values such as `PLLCLKFreq_Value` on *save*.
+   The reliable sequence is **write → save → reload → save** (measured 8 MHz → 72 MHz); this is built into
+   `clock_set`'s multi-pass convergence. When reproducing manually with `cli`, be sure to follow this order.
+10. **Don't rely on an already-started engine when there is no `.ioc`**: an engine that is recycled and restarted comes up with an empty project,
+    and `config saveas` throws a `Mcu.getDie()` NPE. Run `project_save` once first, then continue.
+11. **`set mode` for middleware IPs takes no quotes**: `set mode FREERTOS CMSIS_V2`; `get modes`
+    returns KO for middleware, so `mode_list` automatically falls back to `db/mcu/IP/*_Modes.xml`.
+12. **RTOS objects exist only in the extended save**: only `project_ext.ioc` contains `FREERTOS.Tasks01` etc.;
+    reading state requires a merged view, and after writing, the engine must reload once.
 
-## 7. 目录
+## 7. Directory layout
 
 ```
 mxmcp/
-├── mxmcp/                    服务器源码（零第三方依赖）
-│   ├── server.py             MCP 入口（stdio；--selftest/--list-tools/--call）
-│   ├── rpc.py                JSON-RPC 2.0 / MCP 协议
-│   ├── engine.py             CubeMX 会话引擎（-i 常驻 + 三种成帧）
-│   ├── store.py              工程池、保存/加载、料号解析
-│   ├── ioc.py                .ioc 读写（含 project_ext.ioc 合并视图）
-│   ├── catalog.py            安装目录索引（无安装时自动走数据包）
-│   ├── bundle.py             数据包 build/info/verify + Pack 读取
-│   ├── standalone.py         独立引擎（引脚/模式/参数/NVIC，真实校验）
-│   ├── ipmodes.py            IP 模式与参数 schema
-│   ├── codegen.py            独立 C 代码生成
-│   ├── firmware.py           固件包完整性扫描
-│   └── tools_*.py            113 个 MCP 工具
-├── tests/                    6 个测试脚本
-│   ├── test_units.py         解析/参数/固件预检（含真实生成）
-│   ├── test_e2e.py           MCP 全流程（F1/F4/板卡）
+├── mxmcp/                    Server source (zero third-party dependencies)
+│   ├── server.py             MCP entry point (stdio; --selftest/--list-tools/--call)
+│   ├── rpc.py                JSON-RPC 2.0 / MCP protocol
+│   ├── engine.py             CubeMX session engine (-i resident + three framing modes)
+│   ├── store.py              Project pool, save/load, part number resolution
+│   ├── ioc.py                .ioc read/write (including project_ext.ioc merged view)
+│   ├── catalog.py            Install directory index (falls back to data pack when not installed)
+│   ├── bundle.py             Data pack build/info/verify + Pack reading
+│   ├── standalone.py         Standalone engine (pins/modes/parameters/NVIC, real validation)
+│   ├── ipmodes.py            IP modes and parameter schema
+│   ├── codegen.py            Standalone C code generation
+│   ├── firmware.py           Firmware package integrity scan
+│   └── tools_*.py            113 MCP tools
+├── tests/                    6 test scripts
+│   ├── test_units.py         Parsing/parameters/firmware pre-check (including real generation)
+│   ├── test_e2e.py           Full MCP flow (F1/F4/boards)
 │   ├── test_advanced.py      dma/nvic/gic/mmt/porting/selectors/catalog
-│   ├── test_rtos.py          RTOS 对象读写与校验
-│   ├── test_middleware.py    中间件集成
-│   └── test_standalone.py    把安装路径指到不存在，验证独立模式
-├── tools/                    取证与构建脚本（不是运行时依赖）
-├── docs/                     逆向与使用文档
-├── analysis/                 机器可读逆向产物（本地生成，不发布）
+│   ├── test_rtos.py          RTOS object read/write and validation
+│   ├── test_middleware.py    Middleware integration
+│   └── test_standalone.py    Points the install path at a nonexistent location to verify standalone mode
+├── tools/                    Forensic and build scripts (not runtime dependencies)
+├── docs/                     Reverse-engineering and usage documentation
+├── analysis/                 Machine-readable reverse-engineering artifacts (generated locally, not published)
 ├── LICENSE  CONTRIBUTING.md  CHANGELOG.md  pyproject.toml
-└── .github/workflows/ci.yml  lint + 测试 + 合规 + 打包
+└── .github/workflows/ci.yml  lint + tests + compliance + packaging
 ```
 
-## 8. 测试
+## 8. Testing
 
 ```bat
-python -m pytest tests -q          :: 单元测试（无需 CubeMX）
-python tests\test_standalone.py    :: 独立模式：把 MXMCP_CUBEMX_ROOT 指到不存在的目录
-python tests\test_e2e.py           :: ~70 s，MCP 全流程（需 CubeMX）
-python tests\test_advanced.py      :: 60+ 断言，覆盖新增命令族
-python tests\test_rtos.py          :: RTOS 对象增删改与唯一名约束
-python tests\test_middleware.py    :: 中间件启用与 active IP 报告
-python tools\check_compliance.py   :: 确认没有 ST 派生文件进入仓库
+python -m pytest tests -q          :: Unit tests (no CubeMX needed)
+python tests\test_standalone.py    :: Standalone mode: points MXMCP_CUBEMX_ROOT at a nonexistent directory
+python tests\test_e2e.py           :: ~70 s, full MCP flow (requires CubeMX)
+python tests\test_advanced.py      :: 60+ assertions, covering the newly added command families
+python tests\test_rtos.py          :: RTOS object create/delete/update and unique-name constraint
+python tests\test_middleware.py    :: Middleware enablement and active IP report
+python tools\check_compliance.py   :: Confirms no ST-derived files have entered the repository
 ```
 
-实测（2026-10-29，Windows + CubeMX 6.15.0）：
+Measured results (2026-10-29, Windows + CubeMX 6.15.0):
 
-| 脚本 | 结果 |
+| Script | Result |
 |---|---|
-| `test_units.py` | 通过（含 913 文件真实生成） |
-| `test_e2e.py` | 通过（F1 全流程、板卡工程、F4 时钟、CLI 桥） |
-| `test_advanced.py` | **ALL OK**（93 工具时代） |
-| `test_rtos.py` | 通过（任务/队列/信号量 + 重复名拒绝） |
-| `test_middleware.py` | 通过（FREERTOS 集成 + verify） |
-| `test_standalone.py` | 通过（无安装：建工程→引脚→生成 6 文件） |
+| `test_units.py` | Passed (including real generation of 913 files) |
+| `test_e2e.py` | Passed (F1 full flow, board project, F4 clock, CLI bridge) |
+| `test_advanced.py` | **ALL OK** (as of the 93-tool version) |
+| `test_rtos.py` | Passed (tasks/queues/semaphores + duplicate-name rejection) |
+| `test_middleware.py` | Passed (FREERTOS integration + verify) |
+| `test_standalone.py` | Passed (no installation: create project → pins → generate 6 files) |
 
-## 9. 许可
+## 9. License
 
-MIT（见 [LICENSE](LICENSE)）。**注意**：仓库不含任何 ST 派生数据——
-数据包与反编译产物由使用者从自己的安装件本地生成（`python -m mxmcp.bundle build`），
-不随仓库或发行物分发。详见 [docs/OPEN_SOURCE.md](docs/OPEN_SOURCE.md)。
-STM32 / STM32CubeMX 是 STMicroelectronics 的商标，本项目与其无隶属关系。
-
+MIT (see [LICENSE](LICENSE)). **Note**: the repository contains no ST-derived data —
+the data pack and decompiled artifacts are generated locally by users from their own installation (`python -m mxmcp.bundle build`),
+and are not distributed with the repository or releases. See [docs/OPEN_SOURCE.md](docs/OPEN_SOURCE.md) for details.
+STM32 / STM32CubeMX are trademarks of STMicroelectronics; this project is not affiliated with them.

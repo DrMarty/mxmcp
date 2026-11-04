@@ -1,81 +1,81 @@
-# 贡献指南
+# Contributing Guide
 
-感谢参与。这个项目的目标是：**用 MCP 把 STM32CubeMX 的工程能力完整开放出来，
-并且在没有 CubeMX 的机器上也能用**。
+Thanks for contributing. The goal of this project is to **fully expose STM32CubeMX's project capabilities through MCP,
+and to make them usable on machines without CubeMX as well**.
 
-## 1. 环境
+## 1. Environment
 
 ```bash
 python -m venv .venv && . .venv/Scripts/activate     # Windows: .venv\Scripts\activate
 python -m pip install -e ".[dev]"
 ```
 
-仓库里**不含**任何 ST 派生数据（见 [LICENSE](../LICENSE) 的 THIRD-PARTY NOTICES）。
-要在本地跑完整功能：
+The repository **does not contain** any ST-derived data (see THIRD-PARTY NOTICES in [LICENSE](../LICENSE)).
+To run the full feature set locally:
 
 ```bash
-# 有 CubeMX（hybrid 模式）
+# With CubeMX (hybrid mode)
 set MXMCP_CUBEMX_ROOT=C:\Program Files\STMicroelectronics\STM32Cube\STM32CubeMX
 
-# 只有代码（standalone 模式）：先生成数据包
+# Code only (standalone mode): generate the data pack first
 python -m mxmcp.bundle build --cubemx-root "C:\Program Files\...\STM32CubeMX"
 python -m mxmcp.bundle verify
 ```
 
-`mxmcp/data/*.zip`、`analysis/`、`docs/javap/` 都被 `.gitignore` 忽略，
-`tools/check_compliance.py` 会在 CI 里强制这一点。
+`mxmcp/data/*.zip`, `analysis/`, and `docs/javap/` are all ignored via `.gitignore`;
+`tools/check_compliance.py` enforces this in CI.
 
-## 2. 代码结构
+## 2. Code structure
 
 ```
 mxmcp/
-├── rpc.py            MCP/JSON-RPC 2.0（换行分隔；也接受 Content-Length 帧）
-├── server.py         入口：--selftest --list-tools --call
-├── engine.py         CubeMX 会话（-i 常驻；成帧/超时/挂起恢复）
-├── store.py          工程池、保存/重载、料号解析
-├── ioc.py            .ioc 读写（含与 project_ext.ioc 的合并视图）
-├── catalog.py        安装目录 db 索引；无安装时自动走数据包
-├── bundle.py         数据包 build/info/verify + Pack 读取
-├── standalone.py     独立引擎（引脚/模式/参数/NVIC，真实校验）
-├── ipmodes.py        IP 模式与参数 schema
-├── codegen.py        独立 C 代码生成（HAL Init 参数树驱动）
-├── firmware.py       固件包完整性扫描
-└── tools_*.py        113 个 MCP 工具，按族拆分
+├── rpc.py            MCP/JSON-RPC 2.0 (newline-delimited; Content-Length framing also accepted)
+├── server.py         Entry point: --selftest --list-tools --call
+├── engine.py         CubeMX session (-i resident; framing/timeouts/hang recovery)
+├── store.py          Project pool, save/reload, part number resolution
+├── ioc.py            .ioc read/write (including merged view with project_ext.ioc)
+├── catalog.py        Install directory db index; falls back to data pack when not installed
+├── bundle.py         Data pack build/info/verify + Pack reading
+├── standalone.py     Standalone engine (pins/modes/parameters/NVIC, real validation)
+├── ipmodes.py        IP modes and parameter schema
+├── codegen.py        Standalone C code generation (driven by HAL Init parameter trees)
+├── firmware.py       Firmware package integrity scan
+└── tools_*.py        113 MCP tools, split by family
 ```
 
-## 3. 改动的硬性要求
+## 3. Hard requirements for changes
 
-1. **不要绕过引擎的成帧规则**。CubeMX 的应答有三种形态：独立终止符行、
-   终止符粘在正文尾部、以及走 log4j 行；`engine.py` 全部处理了，改动请保留。
-2. **参数必须登记**。写 `<IP>.<param>` 时同时写入 `<IP>.IPParameters`，否则
-   CubeMX 重新加载会丢弃它（`standalone.py` 与工具层都遵守）。
-3. **引脚名用完整名**（`PC13-TAMPER-RTC`），工具层负责从短名解析。
-4. **不要对未知 MCU 直接 `load <料号>`**：会让解释器永久挂起，必须先解析成
-   db RefName（`Catalog.resolve_mcu`）。
-5. **离线优先**。任何只依赖数据的能力，都要能在没有安装时工作
-   （`catalog`/`bundle`/`standalone`/`ipmodes`/`codegen` 的分支就是范例）。
-6. **不要提交 ST 派生文件**。CI 会拒绝。
+1. **Do not bypass the engine's framing rules**. CubeMX responses come in three forms: a standalone terminator line,
+   a terminator glued to the end of the body text, and responses on log4j lines; `engine.py` handles all of them, so please preserve that when making changes.
+2. **Parameters must be registered**. When writing `<IP>.<param>`, also write it into `<IP>.IPParameters`; otherwise
+   CubeMX discards it on reload (both `standalone.py` and the tool layer follow this rule).
+3. **Use full pin names** (`PC13-TAMPER-RTC`); the tool layer is responsible for resolving them from short names.
+4. **Do not run `load <part number>` directly for an unknown MCU**: it makes the interpreter hang forever; it must first be resolved to a
+   db RefName (`Catalog.resolve_mcu`).
+5. **Offline first**. Any capability that depends only on data must work without an installation
+   (the branches in `catalog`/`bundle`/`standalone`/`ipmodes`/`codegen` are examples).
+6. **Do not commit ST-derived files**. CI will reject them.
 
-## 4. 测试
+## 4. Testing
 
 ```bash
-pytest tests -q                  # 单元测试（无需 CubeMX）
-python tests/test_standalone.py  # 把安装路径指向不存在的目录，验证独立模式
-python tests/test_e2e.py         # 需要 CubeMX（hybrid）
-python tests/test_advanced.py    # 新增的 dma/nvic/gic/mmt/porting 等
-python tests/test_rtos.py        # RTOS 对象读写
-python tests/test_middleware.py  # 中间件集成
+pytest tests -q                  # Unit tests (no CubeMX needed)
+python tests/test_standalone.py  # Points the install path at a nonexistent directory to verify standalone mode
+python tests/test_e2e.py         # Requires CubeMX (hybrid)
+python tests/test_advanced.py    # Newly added dma/nvic/gic/mmt/porting, etc.
+python tests/test_rtos.py        # RTOS object read/write
+python tests/test_middleware.py  # Middleware integration
 ```
 
-PR 要求：`ruff check .` 干净、相关测试通过、README/docs 同步更新。
+PR requirements: `ruff check .` is clean, relevant tests pass, and README/docs are updated accordingly.
 
-## 5. 逆向证据
+## 5. Reverse-engineering evidence
 
-`tools/` 下的脚本是可复现的取证工具（javap 扫描、数据包构建、CLI 探针等）。
-提交与逆向相关的改动时，请说明结论来自哪份 `analysis/*.json` 或哪次实测输出，
-不要凭印象写文档——docs 里每张表都应能追溯到脚本产物。
+The scripts under `tools/` are reproducible forensic tools (javap scanning, data pack building, CLI probes, etc.).
+When submitting reverse-engineering-related changes, please state which `analysis/*.json` file or which measured output a conclusion comes from;
+do not write documentation from memory — every table in docs should be traceable to a script artifact.
 
-## 6. 许可
+## 6. License
 
-提交即表示你同意以 MIT 许可发布你的贡献（见 LICENSE）。涉及 ST 内容的部分
-（数据包、反编译产物）不属于贡献范围。
+By submitting, you agree to release your contribution under the MIT license (see LICENSE). Parts involving ST content
+(data pack, decompiled artifacts) are outside the scope of contributions.
